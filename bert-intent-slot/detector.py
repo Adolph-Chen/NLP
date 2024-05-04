@@ -106,7 +106,7 @@ class JointIntentSlotDetector:
         intent_ids = np.argmax(intent_probs, axis=-1)
         return self.intent_dict[intent_ids.tolist()]
 
-    def detect(self, text, str_lower_case=True):
+    def detect(self, text, str_lower_case=True, threshold=0.5):
         """
         text : list of string, each string is a utterance from user
         """
@@ -138,6 +138,10 @@ class JointIntentSlotDetector:
         intent_labels = self._predict_intent_labels(intent_probs)
 
         slot_values = self._extract_slots_from_labels(inputs['input_ids'], slot_labels, inputs['attention_mask'])
+
+        # 如果意图识别的概率小于阈值，则将意图识别结果设置为"[UNK]"
+        intent_labels = [label if np.max(prob) >= threshold else "[UNK]" for label, prob in
+                         zip(intent_labels, intent_probs)]
 
         outputs = [{'text': text[i], 'intent': intent_labels[i], 'slots': slot_values[i]}
                    for i in range(batch_size)]
